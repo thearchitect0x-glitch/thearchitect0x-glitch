@@ -1,7 +1,7 @@
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.svg"><img src="assets/hero-light.svg" width="100%" alt="The Architect, co-founder of Deimos AI LLC: a glowing map with five routes from the Deimos mark to Clockford, Ratchet, Crimp, Marklode and M.A.X."></picture></p>
 
 <p align="center"><b>I build the controls for AI agents.</b><br>
-Co-founder of <b>Deimos AI LLC</b>. Agents never sleep and never tire, so I make sure a person stays in charge of every act that matters: seen, approved, stoppable and provable.<br>
+Co-founder of <a href="https://deimoscore.com"><b>Deimos AI LLC</b></a> (<a href="https://github.com/deimos-hq">github.com/deimos-hq</a>). Agents never sleep and never tire, so I make sure a person stays in charge of every act that matters: seen, approved, stoppable and provable.<br>
 <a href="https://clockford.com"><b>Clockford</b></a> (patent pending): see, approve and stop your AI agents from your phone, whichever company built them. Private beta 10 Nov 2026 ·
 <a href="https://ratchetgate.com"><b>Ratchet</b></a>: a retried charge, deploy or email happens at most once ·
 <a href="https://github.com/thearchitect0x-glitch/crimp"><b>Crimp</b></a>: open-source decision gate for AI agents (patent pending) ·
