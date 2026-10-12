@@ -33,7 +33,7 @@ WORDS = ['EMMENTAL', 'GRUYERE', 'COMTE', 'RACLETTE', 'GOUDA', 'HAVARTI', 'MANCHE
 SLOTS = {  # slot: poses that make sense there (never peek or handstand: they need a partner prop)
     'div1': ['strut', 'toss', 'lookback', 'back'], 'div2': ['strut', 'toss', 'lookback', 'back'], 'div3': ['strut', 'toss', 'lookback', 'back'],
     'board': ['loaf', 'loaf-cheese'], 'timeline': ['cheesehat', 'lookback'], 'wall': ['loaf'], 'stats': ['loaf-cheese', 'loaf'],
-    'hero': ['loaf'], 'marklode': ['back'], 'rules': ['cheesehat'], 'footer': ['strut', 'loaf'],
+    'rules': ['cheesehat'], 'footer': ['strut', 'loaf'],
 }
 
 
@@ -277,7 +277,7 @@ def hero(light=False):
             f'<g clip-path="url(#type2{k})">{text(614, 352, "> Then I build the answer.", 19, tc)}</g>'
             f'<rect x="614" y="362" width="11" height="18" fill="{tc}"><animate attributeName="opacity" values="1;0" dur=".8s" calcMode="discrete" repeatCount="indefinite"/></rect>'
             f'{text(614, 420, "ARCHITECT · ENGINEER · SYSTEMS THINKER", 14, fg, .7, ls=4)}'
-            f'{ledge}{mini("hero", 1100, floor, PINK, not light)}{walk}'
+            f'{ledge}'
             f'<rect x="0" y="{floor - 1}" width="{W}" height="4" fill="{"#dfe6ff" if light else "#120f20"}"/>'
             + rail(H, '#fff', GOLD, floor, H, light) + ('' if light else f'<rect width="{W}" height="{H}" fill="url(#scan)"/>') + '</g>'
             f'<rect x="1" y="1" width="{W - 2}" height="{H - 2}" rx="22" fill="none" stroke="{fg}" stroke-opacity=".14"/>')
@@ -358,15 +358,13 @@ def st_clockford():
 
 def st_ratchet():
     h, col, floor = 270, GREEN, 248
-    wg, (wx, wy, ww, wh) = ground('wolf-toss', 840, floor, 168, GREEN, 1)
     cyc = 9
-    hx, hy = wx + ww * .22, wy + wh * .30
     toss = ''
     for i in range(3):
         a = i / 3
-        toss += (f'<g opacity="0"><animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;{a:.3f};{a + .01:.3f};{a + .32:.3f};{a + .33:.3f};1" dur="{cyc}s" repeatCount="indefinite"/>'
-                 f'<g>{cheese(hx - 19, hy, 1.0)}<animateTransform attributeName="transform" type="translate" values="0 0;-8 -72;0 0" keyTimes="0;.5;1" dur="{cyc / 3:.2f}s" repeatCount="indefinite" calcMode="spline" keySplines=".2 .7 .4 1;.6 0 .8 .3"/></g>'
-                 + pill(hx - 62, hy - 40, f'retry {i + 1}', '#15121f', GREEN, 12, 'middle') + '</g>')
+        toss += (f'<g opacity="0"><animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;{a:.3f};{a + .01:.3f};{a + .3:.3f};{a + .31:.3f};1" dur="{cyc}s" repeatCount="indefinite"/>'
+                 + pill(880, 120 + i * 40, f'retry {i + 1}', '#15121f', GREEN, 13, 'middle') + '</g>')
+    wg = ''
     x0, y0 = 990, 150
     printer = (f'<rect x="{x0}" y="{y0}" width="170" height="{floor - y0}" rx="12" fill="#14121c" stroke="{GREEN}" stroke-opacity=".5"/>'
                f'<rect x="{x0 + 30}" y="{y0 - 4}" width="110" height="8" rx="3" fill="#000"/>'
@@ -379,7 +377,7 @@ def st_ratchet():
                + f'<line x1="{x0 + 46}" y1="{y0 - 68}" x2="{x0 + 124}" y2="{y0 - 68}" stroke="#999" stroke-dasharray="3 3"/>'
                + text(x0 + 85, y0 - 42, 'CHARGED ×1', 13, '#0a6b33', weight=900, anchor='middle')
                + text(x0 + 85, y0 - 22, 'retries: 3 · effects: 1', 8.5, '#555', anchor='middle') + '</g></g>')
-    art = wg + toss + printer + f'<line x1="700" y1="{floor + .5}" x2="{W - 30}" y2="{floor + .5}" stroke="#fff" stroke-opacity=".1"/>'
+    art = toss + printer + f'<line x1="700" y1="{floor + .5}" x2="{W - 30}" y2="{floor + .5}" stroke="#fff" stroke-opacity=".1"/>'
     body = band(h, col, 'R', 'Retry all you want. It happens once.', ['The effect gate for AI agents: a retried charge,', 'deploy or email happens at most once.'],
                 ['RATCHET', 'OPENSSF SILVER', '1,000 EFFECTS / MONTH FREE'], art)
     return svg(W, h, body, 'Ratchet: the effect gate for AI agents. A retried charge, deploy or email happens at most once.')
@@ -423,10 +421,8 @@ def st_marklode():
                + f'<g opacity="0" transform="rotate(-8 {dx + 190} {dy + 110})"><animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;.8;.81;.97;1" dur="{cyc}s" repeatCount="indefinite"/>'
                f'<animateTransform attributeName="transform" type="translate" additive="sum" values="0 0;0 0;2 1;-2 0;0 0" keyTimes="0;.81;.83;.85;1" dur="{cyc}s" repeatCount="indefinite"/>'
                f'<rect x="{dx + 128}" y="{dy + 90}" width="124" height="38" rx="5" fill="none" stroke="{CYAN}" stroke-width="4"/>{text(dx + 190, dy + 116, "VERDICT", 17, CYAN, weight=900, anchor="middle", ls=3)}</g>')
-    wg, (wx, wy, ww, wh) = ground('wolf-loaf', 850, floor, 96, CYAN, 1)
-    corner = f'<path d="M{dx - 1},{floor - 30} L{dx - 1},{floor} L{dx + 34},{floor} Z" fill="#101820" stroke="{CYAN}" stroke-opacity=".35"/>'
-    art = (dossier + wg + corner + pill(wx + ww * .5, wy - 6, 'read your deck. got notes.', CYAN, BG, 13, 'middle')
-           + mini('marklode', dx + dw - 30, floor, CYAN) + f'<line x1="700" y1="{floor + .5}" x2="{W - 30}" y2="{floor + .5}" stroke="#fff" stroke-opacity=".1"/>')
+    art = (dossier + pill(dx - 20, floor - 12, 'read your deck. got notes.', CYAN, BG, 13, 'end')
+           + f'<line x1="700" y1="{floor + .5}" x2="{W - 30}" y2="{floor + .5}" stroke="#fff" stroke-opacity=".1"/>')
     body = band(h, col, 'M', 'Get torn apart before the pitch.', ['Startup diligence in 24–72 h: competitors, overlapping', 'patents, the three strongest attacks, a verdict.'],
                 ['MARKLODE', '24–72 H', 'MARKLODE.COM/SAMPLE'], art)
     return svg(W, h, body, 'Marklode: startup diligence in 24 to 72 hours: competitors, overlapping patents, the three strongest attacks, a verdict.')
