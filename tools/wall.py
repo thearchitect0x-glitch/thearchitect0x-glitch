@@ -79,7 +79,7 @@ paint, V = stroke_mask()
 def noise(scale, amp):
     n = cv2.resize(rng.standard_normal((H // scale + 2, W2 // scale + 2)).astype(np.float32), (W2, H), interpolation=cv2.INTER_CUBIC)
     return n * amp
-mx = (X2 + noise(90, 2.6)).astype(np.float32); my = (Y2 + noise(90, 2.6)).astype(np.float32)
+mx = (X2 + noise(160, 0.7)).astype(np.float32); my = (Y2 + noise(160, 0.7)).astype(np.float32)
 paint = cv2.remap(paint, mx, my, cv2.INTER_LINEAR)
 core = cv2.GaussianBlur(paint, (0, 0), 1.3)
 soft = cv2.GaussianBlur(paint, (0, 0), 5.0)

@@ -11,7 +11,7 @@ let req = VNGenerateForegroundInstanceMaskRequest()
 let handler = VNImageRequestHandler(ciImage: ci)
 try handler.perform([req])
 guard let obs = req.results?.first else { print("no subject"); exit(1) }
-let buf = try obs.generateMaskedImage(ofInstances: obs.allInstances, from: handler, croppedToInstancesExtent: true)
+let buf = try obs.generateMaskedImage(ofInstances: obs.allInstances, from: handler, croppedToInstancesExtent: false)
 let out = CIImage(cvPixelBuffer: buf)
 let ctx = CIContext()
 guard let cs = CGColorSpace(name: CGColorSpace.sRGB) else { exit(1) }

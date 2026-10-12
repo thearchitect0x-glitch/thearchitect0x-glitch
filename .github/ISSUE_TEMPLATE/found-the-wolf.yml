@@ -1,0 +1,12 @@
+name: found the wolf
+description: You found today's wolf. Tell Rook the word on his cheese.
+title: "found the wolf"
+labels: ["found-the-wolf"]
+body:
+  - type: input
+    id: word
+    attributes:
+      label: today's word
+      description: It's printed on his cheese (or hiding in the page's source).
+    validations:
+      required: true
