@@ -1,4 +1,4 @@
-# Repaint the wolf graffiti: remove the old atom mark (and the viewer's "AI-Generated" chip), spray the new Deimos mark.
+# Clean the wall: remove the old atom mark (and the viewer's chip), leaving bare concrete, the wolf and the floor.
 import sys, numpy as np, cv2
 src, out = sys.argv[1], sys.argv[2]
 rng = np.random.default_rng(7)
@@ -55,35 +55,4 @@ tex = tex / np.maximum(wsum, 1e-3)
 fill = low + tex
 m = cv2.GaussianBlur(mask.astype(np.float32), (0, 0), 3)[:, :, None]
 wall = f * (1 - m) + fill * m
-# the new mark, sprayed
-cx, cy, R = 512, 470, 300
-paint = np.zeros((H, W), np.float32)
-ang = np.radians([-90, 150, 30]); V = [(int(cx + R * np.cos(a)), int(cy + R * np.sin(a))) for a in ang]
-cv2.circle(paint, (cx, cy), R, 1.0, 20, cv2.LINE_AA)
-cv2.polylines(paint, [np.array(V, np.int32)], True, 1.0, 19, cv2.LINE_AA)
-for v in V: cv2.line(paint, (cx, cy), v, 1.0, 14, cv2.LINE_AA)
-for v in V: cv2.circle(paint, v, 34, 1.0, -1, cv2.LINE_AA)
-cv2.circle(paint, (cx, cy), 50, 1.0, -1, cv2.LINE_AA)
-core = cv2.GaussianBlur(paint, (0, 0), 1.6)
-over = cv2.GaussianBlur(paint, (0, 0), 11) * 0.35
-spk = (rng.random((H, W)) < 0.05).astype(np.float32) * (cv2.GaussianBlur(paint, (0, 0), 22) > 0.06)
-alpha = np.clip(np.maximum(core, over) + spk * 0.5, 0, 1)
-# drips from the low edges of strokes
-drips = np.zeros((H, W), np.float32)
-ys, xs = np.nonzero(paint > 0.5)
-for _ in range(46):
-    i = rng.integers(len(xs)); x, y = int(xs[i]), int(ys[i])
-    col = np.nonzero(paint[:, x] > 0.5)[0]; y = int(col[col >= y].max()) if len(col) else y
-    ln = int(rng.choice([rng.integers(25, 90), rng.integers(90, 260), rng.integers(260, 470)], p=[.5, .35, .15]))
-    w = float(rng.uniform(3, 7.5)); wob = rng.uniform(-1.5, 1.5)
-    for t in range(ln):
-        k = 1 - 0.55 * t / ln
-        cv2.circle(drips, (int(x + wob * np.sin(t / 40)), y + t), max(1, int(w * k / 2 + .5)), 1.0, -1, cv2.LINE_AA)
-    cv2.circle(drips, (int(x + wob * np.sin(ln / 40)), y + ln), int(w * .75), 1.0, -1, cv2.LINE_AA)
-alpha = np.maximum(alpha, cv2.GaussianBlur(drips, (0, 0), 1.1))
-alpha *= (0.86 + 0.14 * cv2.GaussianBlur(rng.random((H, W)).astype(np.float32), (0, 0), 1.5))
-alpha[wolf] = 0
-a = cv2.GaussianBlur(alpha, (0, 0), 0.6)[:, :, None]
-ink = np.array([22, 21, 20], np.float32)
-res = wall * (1 - a * 0.94) + ink * a * 0.94
-cv2.imwrite(out, np.clip(res, 0, 255).astype(np.uint8), [cv2.IMWRITE_JPEG_QUALITY, 92])
+cv2.imwrite(out, np.clip(wall, 0, 255).astype(np.uint8))
