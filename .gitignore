@@ -5,3 +5,4 @@ src/*.png
 src/*.jpg
 src/poses/
 CREATIVE-DIRECTION.md
+tools/cutout
