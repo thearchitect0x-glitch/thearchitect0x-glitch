@@ -14,16 +14,16 @@ for p in sorted(D.glob('*.webp')):
 json.dump(meta, open(D / 'meta.json', 'w'), indent=1)
 print(json.dumps(meta)[:600])
 
-# Rook's chest screen, so the countdown sits exactly on it (needs numpy + opencv)
+# The robot's chest screen, so what it shows sits exactly on it (needs numpy + opencv)
 try:
     import numpy as np, cv2
-    im = np.array(Image.open(D / 'rook.webp').convert('RGBA')); H, W_ = im.shape[:2]
+    im = np.array(Image.open(D / 'robot.webp').convert('RGBA')); H, W_ = im.shape[:2]
     hsv = cv2.cvtColor(np.ascontiguousarray(im[:, :, :3]), cv2.COLOR_RGB2HSV)
     m = ((hsv[:, :, 2] > 200) & (hsv[:, :, 1] < 40)).astype(np.uint8); m[:int(H * .45)] = 0; m[int(H * .8):] = 0
     k, lab, st, _ = cv2.connectedComponentsWithStats(m, 8); i = 1 + int(np.argmax(st[1:, 4]))
     x, y, w, h = (int(v) for v in st[i][:4])
-    meta['rook']['screen'] = [x + 3, y + 3, w - 6, h - 6]
+    meta['robot']['screen'] = [x + 3, y + 3, w - 6, h - 6]
     json.dump(meta, open(D / 'meta.json', 'w'), indent=1)
-    print('screen', meta['rook']['screen'])
+    print('screen', meta['robot']['screen'])
 except ImportError:
     pass

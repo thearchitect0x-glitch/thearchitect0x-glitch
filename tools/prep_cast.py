@@ -11,7 +11,7 @@ def prep(src, name, h):
     im.save(OUT / f'{name}.webp', 'WEBP', quality=86, method=6)
     print(name, im.size, (OUT / f'{name}.webp').stat().st_size)
 cuts = ROOT / 'src'
-prep(pathlib.Path.home() / 'Development/clockford/web/lab/artwork/assets/cast/cut-rook.webp', 'rook', 440)
+prep(cuts / 'cut-robot.webp', 'robot', 440)                       # copy the robot's cut-out here first
 prep(cuts / 'cut-w5.png', 'wolf-back', 300)
 prep(cuts / 'cut-w6.png', 'wolf-cheesehat', 300)
 prep(cuts / 'cut-w7.png', 'wolf-cheese', 300)

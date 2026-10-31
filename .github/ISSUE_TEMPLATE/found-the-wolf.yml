@@ -1,5 +1,5 @@
 name: found the wolf
-description: You found today's wolf. Tell Rook the word on his cheese.
+description: You found today's wolf. Tell the robot at the finders desk the word on his cheese.
 title: "found the wolf"
 labels: ["found-the-wolf"]
 body:

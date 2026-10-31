@@ -1,7 +1,8 @@
 # LIGHTS ON: builds every SVG on the profile. Standard library only, so the daily GitHub Action can run it.
 #   python3 tools/profile.py            all art (stats from the API with GH_TOKEN/GITHUB_TOKEN, or the `gh` CLI)
 #   python3 tools/profile.py --daily    the same, plus (inside GitHub Actions) the wolf-hunt ledger from issues
-# One glowing route runs down the page at x=96; every section is a station on it; it ends at 10 NOV.
+# One glowing route runs down the page at x=96; every section is a station on it; it ends at the finders desk.
+# Only today's facts on this page: each product's own site is where its plans are said.
 import base64, datetime as dt, hashlib, json, math, os, pathlib, random, re, subprocess, sys, urllib.request
 from xml.sax.saxutils import escape as esc
 
@@ -10,9 +11,7 @@ A = ROOT / 'assets'
 ICONS = ROOT / 'src' / 'icons'
 USER = 'thearchitect0x-glitch'
 REPO = f'{USER}/{USER}'
-BETA = dt.date(2026, 11, 10)
 TODAY = dt.date.fromisoformat(os.environ.get('PROFILE_DAY', dt.date.today().isoformat()))
-DAYS = (BETA - TODAY).days
 
 
 def seeded(tag, day=TODAY):
@@ -31,9 +30,11 @@ W = 1280
 WORDS = ['EMMENTAL', 'GRUYERE', 'COMTE', 'RACLETTE', 'GOUDA', 'HAVARTI', 'MANCHEGO', 'BRIE', 'APPENZELLER', 'TILSIT',
          'JARLSBERG', 'FONTINA', 'TALEGGIO', 'REBLOCHON', 'EDAM', 'CHEDDAR', 'PECORINO', 'GORGONZOLA', 'MIMOLETTE', 'BEAUFORT']
 SLOTS = {  # slot: poses that make sense there (never peek or handstand: they need a partner prop)
-    'div1': ['strut', 'toss', 'lookback', 'back'], 'div2': ['strut', 'toss', 'lookback', 'back'], 'div3': ['strut', 'toss', 'lookback', 'back'],
-    'board': ['loaf', 'loaf-cheese'], 'timeline': ['cheesehat', 'lookback'], 'wall': ['loaf'], 'stats': ['loaf-cheese', 'loaf'],
-    'rules': ['cheesehat'], 'footer': ['strut', 'loaf'],
+    # Only slots in images the README shows. The trimmed README dropped the dividers, the board, the timeline, the
+    # stats and the rules, so their slots are off; to bring one back, put its image back first, then its line here:
+    #   'div1'/'div2'/'div3': ['strut', 'toss', 'lookback', 'back'], 'board': ['loaf', 'loaf-cheese'],
+    #   'timeline': ['cheesehat', 'lookback'], 'stats': ['loaf-cheese', 'loaf'], 'rules': ['cheesehat']
+    'wall': ['loaf'], 'footer': ['strut', 'loaf'],
 }
 
 
@@ -44,7 +45,6 @@ def word_for(day):
 _h = seeded('hunt')
 HUNT = {'slot': _h.choice(sorted(SLOTS)), 'word': word_for(TODAY)}
 HUNT['pose'] = _h.choice(SLOTS[HUNT['slot']])
-if 0 < DAYS <= 7 and 'cheesehat' in SLOTS[HUNT['slot']]: HUNT['pose'] = 'cheesehat'
 
 
 def uri(path, mime=None):
@@ -199,7 +199,7 @@ def gear(gx, gy, r, teeth, dur, col='#fff', rev=False):
 
 
 # ================================================================ S1 HERO: the map lights up (dark: night map; light: blueprint)
-STATIONS = [('CLOCKFORD', GOLD, (110, 86), 'end'), ('RATCHET', GREEN, (510, 66), 'start'), ('CRIMP', PINK, (548, 250), 'end'), ('MARKLODE', CYAN, (490, 420), 'end'), ('M.A.X', ORANGE, (168, 430), 'end')]
+STATIONS = [('CLOCKFORD', GOLD, (110, 86), 'end'), ('RATCHET', GREEN, (510, 66), 'start'), ('CRIMP', PINK, (548, 250), 'end'), ('MARKLODE', CYAN, (490, 420), 'end'), ('WARDLATCH', ORANGE, (168, 430), 'below')]
 
 
 def hero(light=False):
@@ -229,14 +229,20 @@ def hero(light=False):
         L = math.hypot(sx - cx, sy - cy) + 40
         mx, my = (cx + sx) / 2 + (sy - cy) * .18, (cy + sy) / 2 - (sx - cx) * .18
         c = INK if light else col
-        left = anc == 'end'
-        lx = sx - 14 if left else sx + 14
-        hl = (f'<rect x="{(lx - len(name) * 8.2 - 4) if left else lx - 4:.0f}" y="{sy - 28}" width="{len(name) * 8.2 + 8:.0f}" height="15" fill="{col}" opacity=".45"/>' if light else '')
+        adv = len(name) * 9.2                       # 12 px monospace (.6 em) + 2 letter-spacing a glyph, the trailing gap included
+        if anc == 'below':                          # under its dot, clear of the main route that runs down to the rail
+            lx, ly, ta = sx + 8, sy + 28, 'middle'
+            x0 = lx - adv / 2
+        else:
+            left = anc == 'end'
+            lx, ly, ta = (sx - 14 if left else sx + 14), sy - 16, ('end' if left else 'start')
+            x0 = lx - adv if left else lx
+        hl = (f'<rect x="{x0 - 4:.0f}" y="{ly - 12}" width="{adv + 6:.0f}" height="15" fill="{col}" opacity=".45"/>' if light else '')
         routes += (f'<path d="M{cx},{cy} Q{mx:.0f},{my:.0f} {sx},{sy}" fill="none" stroke="{c}" stroke-width="3" stroke-dasharray="{L:.0f}" stroke-dashoffset="{L:.0f}" stroke-linecap="round">'
                    f'<animate attributeName="stroke-dashoffset" values="{L:.0f};{L:.0f};0;0" keyTimes="0;{t0 / 14:.3f};{(t0 + .5) / 14:.3f};1" dur="14s" repeatCount="indefinite"/></path>'
                    f'<g opacity="0"><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;{(t0 + .5) / 14:.3f};{(t0 + .6) / 14:.3f};1" dur="14s" repeatCount="indefinite"/>{hl}'
                    f'<circle cx="{sx}" cy="{sy}" r="9" fill="{col}" stroke="{fg}" stroke-width="2"/>'
-                   + text(lx, sy - 16, name, 12, c, anchor='end' if left else 'start', weight=700, ls=2) + '</g>')
+                   + text(lx, ly, name, 12, c, anchor=ta, weight=700, ls=2) + '</g>')
     L6 = 560
     routes += (f'<path d="M{cx},{cy} C{cx - 70},{cy + 140} {RAIL_X},{cy + 120} {RAIL_X},{H}" fill="none" stroke="{fg}" stroke-width="6" stroke-dasharray="{L6}" stroke-dashoffset="{L6}">'
                f'<animate attributeName="stroke-dashoffset" values="{L6};{L6};0;0" keyTimes="0;.21;.3;1" dur="14s" repeatCount="indefinite"/></path>')
@@ -246,7 +252,6 @@ def hero(light=False):
                               f'<animate attributeName="x" values="{xs}" dur="2.6s" calcMode="discrete" repeatCount="indefinite"/></text>')
     wg, (wx, wy, ww, wh) = ground('wolf-strut', 0, floor, 150, '#ffe9c2' if light else PINK, 1, night=not light)
     say = 'bright in here. good thing i brought shades.' if light else '3 a.m.? good. you’re one of us.'
-    if 0 < DAYS <= 7: say = f'{DAYS} days. bring cheese.'
     walk = (f'<g><animateTransform attributeName="transform" type="translate" values="-200 0;-200 0;{RAIL_X + 1010} 0;{RAIL_X + 1010} 0;{W + 220} 0" keyTimes="0;.14;.43;.86;1" dur="14s" repeatCount="indefinite"/>'
             f'{wg}<g opacity="0"><animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.55;.57;.84;.86;1" dur="14s" repeatCount="indefinite"/>'
             + pill(-30, wy - 14, say, INK if light else YELLOW, '#fff' if light else BG, 15, 'middle') + '</g></g>')
@@ -282,16 +287,15 @@ def hero(light=False):
             + rail(H, '#fff', GOLD, floor, H, light) + ('' if light else f'<rect width="{W}" height="{H}" fill="url(#scan)"/>') + '</g>'
             f'<rect x="1" y="1" width="{W - 2}" height="{H - 2}" rx="22" fill="none" stroke="{fg}" stroke-opacity=".14"/>')
     comment = '' if light else f'you read the source. he respects that. today’s word: {HUNT["word"]}'
-    return svg(W, H, body, 'The Architect, co-founder of Deimos AI LLC: a glowing map with five routes from the Deimos mark to Clockford, Ratchet, Crimp, Marklode and M.A.X.', defs, comment)
+    return svg(W, H, body, 'The Architect, co-founder of Deimos AI LLC: a glowing map with five routes from the Deimos mark to Clockford, Ratchet, Crimp, Marklode and Wardlatch.', defs, comment)
 
 
 # ================================================================ S3 THE BOARD
 def board():
     sunday = TODAY.weekday() == 6
-    beta = f'PRIVATE BETA IN {DAYS} DAYS' if DAYS > 1 else ('PRIVATE BETA TOMORROW' if DAYS == 1 else 'PRIVATE BETA IS OPEN')
-    rows = [('CLOCKFORD', GOLD, beta, 'patent pending'), ('RATCHET', GREEN, 'LIVE · 1,000 EFFECTS / MONTH FREE', 'ratchetgate.com'),
-            ('CRIMP', PINK, 'OPEN SOURCE · PATENT PENDING', 'github'), ('MARKLODE', CYAN, 'TAKING IDEAS · 24–72 H', 'marklode.com'),
-            ('M.A.X', ORANGE, 'OFFLINE-FIRST · IN THE LAB', 'deimoscore.com')]
+    rows = [('CLOCKFORD', GOLD, 'PRIVATE BETA IN PREPARATION', 'clockford.com'), ('RATCHET', GREEN, 'LIVE · 1,000 EFFECTS / MONTH FREE', 'ratchetgate.com'),
+            ('CRIMP', PINK, 'OPEN SOURCE · OPENSSF SILVER', 'github'), ('MARKLODE', CYAN, 'TAKING IDEAS · 24–72 H', 'marklode.com'),
+            ('WARDLATCH', ORANGE, 'FREE · OPEN SOURCE · OPENSSF SILVER', 'deimos-hq/wardlatch')]
     if sunday: rows.append(('THE WOLF', YELLOW, 'ON DUTY · CHEESE RESERVES: CLASSIFIED', 'sundays only'))
     top, X0 = 150, 150
     H = top + 70 + len(rows) * 42 + 20
@@ -299,7 +303,7 @@ def board():
     body += f'<rect x="{X0 - 20}" y="{top}" width="{W - X0 - 20}" height="{H - top - 20}" rx="14" fill="{PANEL}" stroke="{GOLD}" stroke-opacity=".25"/>'
     wg, (wx, wy, ww, wh) = ground('wolf-cheesehat', X0 + 110, top + 1, 124, GOLD, -1)
     body += wg + f'<rect x="{X0 - 20}" y="{top - 2}" width="{W - X0 - 20}" height="6" rx="2" fill="#1d1929"/>'   # the frame lip in front of his paws
-    if DAYS > 0: body += pill(wx + ww + 16, wy + 44, 'reporting for beta.', GOLD, BG, 14)
+    body += pill(wx + ww + 16, wy + 44, 'reporting for duty.', GOLD, BG, 14)
     body += text(X0 + 420, 70, 'NOW', 14, op=.55, ls=6) + text(W - 50, 70, f'BOARD UPDATED {TODAY.strftime("%d %b %Y").upper()}', 12, op=.4, anchor='end', ls=3)
     for i, (name, col, status, where) in enumerate(rows):
         y = top + 56 + i * 42
@@ -311,10 +315,10 @@ def board():
                  + f'<clipPath id="st{i}"><rect x="{X0 + 270}" y="{y - 24}" height="32" width="0"><animate attributeName="width" from="0" to="700" begin="{t + .5:.2f}s" dur=".9s" fill="freeze"/></rect></clipPath>'
                  + f'<g clip-path="url(#st{i})">{text(X0 + 270, y, status, 18, "#fff", .92, ls=2)}</g>' + text(W - 60, y, where, 13, col, .7, anchor='end', ls=1))
     body += mini('board', W - 240, H - 26, GOLD)
-    return svg(W, H, body, f'Now: Clockford {beta.lower()}; Ratchet live with 1,000 effects a month free; Crimp open source; Marklode taking ideas; M.A.X in the lab.')
+    return svg(W, H, body, 'Now: Clockford private beta in preparation; Ratchet live with 1,000 effects a month free; Crimp open source; Marklode taking ideas; Wardlatch free and open source.')
 
 
-# ================================================================ S4 THE STATIONS (five linked bands; the last two smaller)
+# ================================================================ S4 THE STATIONS (four linked bands; the last one smaller)
 def band(h, col, letter, head, lines, tags, art, note=None):
     body = card_bg(h, col=col, op=.18) + rail(h, col, col) + roundel(70, col, letter)
     body += f'<circle cx="980" cy="{h / 2}" r="190" fill="{col}" opacity=".07" filter="url(#soft)"/>'
@@ -331,7 +335,7 @@ def band(h, col, letter, head, lines, tags, art, note=None):
 
 def st_clockford():
     h, col, floor = 300, GOLD, 282
-    rg, _ = ground('rook', 880, floor, 236, CYAN, -1)
+    rg, _ = ground('robot', 880, floor, 236, CYAN, -1)
     px, py, pw, ph = 990, 64, 150, 216
     cards = [('agent · send invoice', 'APPROVE', GREEN), ('agent · ship deploy', 'APPROVE', GREEN), ('agent · move $9,400', 'STOP', RED)]
     cyc, stack = 9, ''
@@ -352,8 +356,8 @@ def st_clockford():
     art = (f'<ellipse cx="960" cy="{floor + 4}" rx="200" ry="10" fill="{CYAN}" opacity=".08"/>' + rg + phone
            + f'<line x1="760" y1="{floor + .5}" x2="{W - 30}" y2="{floor + .5}" stroke="#fff" stroke-opacity=".1"/>')
     body = band(h, col, 'C', 'Your agents. Your phone. Your call.', ['See, approve and stop your AI agents from your', 'phone, whichever company built them.'],
-                ['CLOCKFORD', 'PATENT PENDING', 'PRIVATE BETA 10 NOV'], art)
-    return svg(W, h, body, 'Clockford: see, approve and stop your AI agents from your phone, whichever company built them. Patent pending, private beta 10 November.')
+                ['CLOCKFORD', 'PRIVATE BETA IN PREPARATION', 'CLOCKFORD.COM'], art)
+    return svg(W, h, body, 'Clockford: see, approve and stop your AI agents from your phone, whichever company built them. Private beta in preparation.')
 
 
 def st_ratchet():
@@ -375,12 +379,12 @@ def st_ratchet():
                f'<rect x="{x0 + 36}" y="{y0 - 106}" width="98" height="106" fill="#f4f1e8"/>'
                + text(x0 + 85, y0 - 80, 'RECEIPT', 10, '#333', weight=700, anchor='middle', ls=2)
                + f'<line x1="{x0 + 46}" y1="{y0 - 68}" x2="{x0 + 124}" y2="{y0 - 68}" stroke="#999" stroke-dasharray="3 3"/>'
-               + text(x0 + 85, y0 - 42, 'CHARGED ×1', 13, '#0a6b33', weight=900, anchor='middle')
-               + text(x0 + 85, y0 - 22, 'retries: 3 · effects: 1', 8.5, '#555', anchor='middle') + '</g></g>')
+               + text(x0 + 85, y0 - 42, 'STARTED ×1', 13, '#0a6b33', weight=900, anchor='middle')
+               + text(x0 + 85, y0 - 22, 'retries: 3 · started: 1', 8.5, '#555', anchor='middle') + '</g></g>')
     art = toss + printer + f'<line x1="700" y1="{floor + .5}" x2="{W - 30}" y2="{floor + .5}" stroke="#fff" stroke-opacity=".1"/>'
-    body = band(h, col, 'R', 'Retry all you want. It happens once.', ['The effect gate for AI agents: a retried charge,', 'deploy or email happens at most once.'],
+    body = band(h, col, 'R', 'Retry all you want. It starts at most once.', ['The effect gate for AI agents: a retried charge,', 'deploy or email starts at most once.'],
                 ['RATCHET', 'OPENSSF SILVER', '1,000 EFFECTS / MONTH FREE'], art)
-    return svg(W, h, body, 'Ratchet: the effect gate for AI agents. A retried charge, deploy or email happens at most once.')
+    return svg(W, h, body, 'Ratchet: the effect gate for AI agents. A retried charge, deploy or email starts at most once.')
 
 
 def st_crimp():
@@ -400,7 +404,7 @@ def st_crimp():
              f'<g opacity="0">{text(1005, 58, "WITHDRAWN", 17, PINK, weight=900, anchor="middle", ls=3)}<animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;.58;.62;.95;1" dur="{cyc}s" repeatCount="indefinite"/></g>'
              f'<animateTransform attributeName="transform" type="translate" values="0 0;0 0;0 -18;0 -18;0 0" keyTimes="0;.55;.6;.95;1" dur="{cyc}s" repeatCount="indefinite"/></g></g>')
     body = band(h, col, 'C', 'Show the facts, or it doesn’t stand.', ['Agents submit the rule and the facts, not a conclusion.', 'When a fact breaks, the decision withdraws itself.'],
-                ['CRIMP', 'OPEN SOURCE', 'PATENT PENDING', 'OPENSSF SILVER'], cards + stamp,
+                ['CRIMP', 'OPEN SOURCE', 'OPENSSF SILVER'], cards + stamp,
                 note='In 2022, 83% of appealed Medicare Advantage prior-auth denials were overturned.')
     return svg(W, h, body, 'Crimp, open source: agents submit the rule and facts, not a conclusion; the decision withdraws itself when a fact breaks.')
 
@@ -428,22 +432,6 @@ def st_marklode():
     return svg(W, h, body, 'Marklode: startup diligence in 24 to 72 hours: competitors, overlapping patents, the three strongest attacks, a verdict.')
 
 
-def st_max():
-    h, col = 210, ORANGE
-    x0, y = 820, 112
-
-    def wave(seed, spike):
-        r = random.Random(seed)
-        return 'M' + ' L'.join(f'{x0 + i * 10:.0f},{y + r.uniform(-9, 9) + (-50 if spike and i in (27, 28) else 0):.0f}' for i in range(41))
-    vals = ';'.join(wave(s, s % 3 == 2) for s in range(6)) + ';' + wave(0, False)
-    art = (f'<rect x="{x0 - 4}" y="{y - 18}" width="408" height="36" rx="8" fill="{col}" fill-opacity=".10"/>' + text(x0, y - 28, 'OWN BASELINE', 11, col, .75, ls=3)
-           + f'<path d="{wave(0, False)}" fill="none" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"><animate attributeName="d" values="{vals}" dur="6s" repeatCount="indefinite"/></path>'
-           f'<circle cx="{x0 + 275}" cy="{y - 50}" r="12" fill="none" stroke="{col}" stroke-width="3" opacity="0"><animate attributeName="opacity" values="0;0;1;0;0;1;0" keyTimes="0;.33;.36;.5;.83;.86;1" dur="6s" repeatCount="indefinite"/></circle>')
-    body = band(h, col, 'X', 'Measured against you. Not everyone.', ['Offline-first behavioral analysis for litigation', 'teams, read against each person’s own baseline.'],
-                ['M.A.X', 'OFFLINE-FIRST', 'FOR LITIGATION TEAMS'], art)
-    return svg(W, h, body, 'M.A.X: offline-first behavioral analysis for litigation teams, against each person’s own baseline.')
-
-
 # ================================================================ S5 THE FOUR RULES
 def rules():
     H, floor = 470, 392
@@ -453,8 +441,8 @@ def rules():
     pillars = ''.join(f'<rect x="{x - 9}" y="70" width="18" height="{floor - 70}" fill="#16131f" stroke="#fff" stroke-opacity=".08"/>' for x in xs[1:4])
     caps = [('People stay in charge', 'of what matters.'), ('Assume something', 'is already inside.'), ('If it matters,', 'make it provable.'), ('Bend,', 'don’t break.')]
     cols = [GOLD, PINK, CYAN, GREEN]
-    # 1 · Rook, crossing guard: agents wait at the line until a person says go
-    rg, _ = ground('rook', 225, floor, 176, '#ffffff', 1)
+    # 1 · the robot, crossing guard: agents wait at the line until a person says go
+    rg, _ = ground('robot', 225, floor, 176, '#ffffff', 1)
     oct_ = ' '.join(f'{318 + 32 * math.cos(math.radians(22.5 + 45 * i)):.1f},{floor - 178 + 32 * math.sin(math.radians(22.5 + 45 * i)):.1f}' for i in range(8))
     sign = (f'<line x1="318" y1="{floor}" x2="318" y2="{floor - 150}" stroke="#bbb" stroke-width="5"/><polygon points="{oct_}" fill="{RED}" stroke="#fff" stroke-width="3"/>'
             + text(318, floor - 172, 'STOP', 14, '#fff', weight=900, anchor='middle', ls=1))
@@ -615,8 +603,8 @@ def stats():
 
 # ================================================================ TERMINAL (kept: the owner likes it)
 TERM = [('$ whoami', GREEN), ('the architect · co-founder, Deimos AI LLC', '#fff'),
-        ('$ deimos ls --built', GREEN), ('clockford  (patent pending)   ratchet   crimp  (patent pending)   marklode   m.a.x', '#fff'),
-        ('$ deimos badges', GREEN), ('OpenSSF Best Practices: SILVER × 2   ·   clockford private beta: 10 NOV', YELLOW),
+        ('$ deimos ls --built', GREEN), ('clockford   ratchet   crimp   marklode   wardlatch', '#fff'),
+        ('$ deimos badges', GREEN), ('OpenSSF Best Practices: SILVER × 3 (self-certified)   ·   ratchet · crimp · wardlatch', YELLOW),
         ('$ sleep 8h', GREEN), ('sleep: refused. the agents never sleep either.', PINK),
         ('$ wolf --where', GREEN), ('somewhere on this page. find him. read the word on his cheese.', CYAN)]
 
@@ -637,38 +625,37 @@ def terminal():
             '<circle cx="26" cy="20" r="7" fill="#ff5f57"/><circle cx="50" cy="20" r="7" fill="#febc2e"/><circle cx="74" cy="20" r="7" fill="#28c840"/>'
             + text(Wt / 2, 25, 'architect@deimos: ~', 13, op=.5, anchor='middle') + rows
             + f'<rect x="34" y="{cy - 17}" width="10" height="20" fill="{GREEN}" opacity="0"><animate attributeName="opacity" values="1;0" dur=".9s" begin="{t:.1f}s" calcMode="discrete" repeatCount="indefinite"/></rect>')
-    return svg(Wt, H, body, 'A terminal: whoami, the five builds, the badges, and a refusal to sleep.')
+    return svg(Wt, H, body, 'A terminal: whoami, the five builds, the three OpenSSF Silver badges, and a refusal to sleep.')
 
 
-# ================================================================ S8 THE CAST (Rook counts down on his own chest)
+# ================================================================ S8 THE CAST (the robot, with a screen on his chest, and the wolf)
 def cast_scene():
     rng = random.Random(9)
     H, floor = 560, 488
-    rook_h, rcx, wcx = 400, 430, 830
-    rg, (rx, ry, rw, rh) = ground('rook', rcx, floor, rook_h, CYAN, 1)
-    rook_id = LAST_IMG[0]
-    s = rook_h / META['rook']['foot']
-    q = META['rook']['screen']                                        # the chest screen, measured in the cut-out (tools/meta.py)
+    robot_h, rcx, wcx = 400, 430, 830
+    rg, (rx, ry, rw, rh) = ground('robot', rcx, floor, robot_h, CYAN, 1)
+    robot_id = LAST_IMG[0]
+    s = robot_h / META['robot']['foot']
+    q = META['robot']['screen']                                       # the chest screen, measured in the cut-out (tools/meta.py)
     sx, sy, sw, sh = rx + q[0] * s, ry + q[1] * s, q[2] * s, q[3] * s
-    big = str(DAYS) if DAYS > 0 else 'OPEN'
     screen = (f'<clipPath id="scr"><rect x="{sx:.1f}" y="{sy:.1f}" width="{sw:.1f}" height="{sh:.1f}" rx="4"/></clipPath>'
               f'<g clip-path="url(#scr)"><rect x="{sx:.1f}" y="{sy:.1f}" width="{sw:.1f}" height="{sh:.1f}" fill="#04121a"/>'
-              + text(sx + sw / 2, sy + sh * .62, big, sh * (.6 if DAYS > 0 else .42), CYAN, weight=900, anchor='middle', extra='filter="url(#glow)"')
-              + text(sx + sw / 2, sy + sh * .88, 'DAYS TO BETA' if DAYS > 0 else 'BETA', sh * .12, CYAN, .8, anchor='middle', ls=2)
+              + text(sx + sw / 2, sy + sh * .62, 'ON', sh * .6, CYAN, weight=900, anchor='middle', extra='filter="url(#glow)"')
+              + text(sx + sw / 2, sy + sh * .88, 'WATCH', sh * .12, CYAN, .8, anchor='middle', ls=2)
               + f'<rect x="{sx:.1f}" y="{sy:.1f}" width="{sw:.1f}" height="{sh:.1f}" fill="url(#scan2)"/>'
               f'<rect x="{sx:.1f}" y="{sy:.1f}" width="{sw:.1f}" height="3" fill="{CYAN}" opacity=".25"><animate attributeName="y" values="{sy:.1f};{sy + sh:.1f}" dur="2.4s" repeatCount="indefinite"/></rect></g>'
               f'<ellipse cx="{sx + sw / 2:.1f}" cy="{floor + 6}" rx="120" ry="12" fill="{CYAN}" opacity=".10"/>')
     wg, (wx, wy, ww, wh) = ground('wolf-loaf-cheese', wcx, floor, 150, YELLOW, -1, flip=True)
     wolf_id = LAST_IMG[0]
-    lines = [('rook', 'Every agent in town, accounted for.'), ('wolf', '…and every crumb of cheese.'), ('rook', 'Beta opens 10 November.'), ('wolf', 'bring cheese.')]
+    lines = [('robot', 'Every agent in town, accounted for.'), ('wolf', '…and every crumb of cheese.'), ('robot', 'Night shift starts now.'), ('wolf', 'bring cheese.')]
     bub, cyc = '', 16
     for i, (who, s_) in enumerate(lines):
         bw = 30 + len(s_) * 10.2
-        bx = rx + rw * .62 if who == 'rook' else wx + ww * .5 - bw / 2
-        by = ry + 10 if who == 'rook' else wy - 74
+        bx = rx + rw * .62 if who == 'robot' else wx + ww * .5 - bw / 2
+        by = ry + 10 if who == 'robot' else wy - 74
         a, b = i / 4, (i + 1) / 4
-        col = '#ffffff' if who == 'rook' else YELLOW
-        tail = (f'<path d="M{bx + 30},{by + 44} l-4,22 l22,-22z" fill="{col}"/>' if who == 'rook' else f'<path d="M{bx + bw / 2 - 8},{by + 44} l8,20 l8,-20z" fill="{col}"/>')
+        col = '#ffffff' if who == 'robot' else YELLOW
+        tail = (f'<path d="M{bx + 30},{by + 44} l-4,22 l22,-22z" fill="{col}"/>' if who == 'robot' else f'<path d="M{bx + bw / 2 - 8},{by + 44} l8,20 l8,-20z" fill="{col}"/>')
         bub += (f'<g opacity="0"><animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;{a:.3f};{a + .02:.3f};{b - .03:.3f};{b - .01:.3f};1" dur="{cyc}s" repeatCount="indefinite"/>'
                 f'<rect x="{bx:.0f}" y="{by:.0f}" width="{bw:.0f}" height="46" rx="23" fill="{col}"/>{tail}' + text(bx + bw / 2, by + 30, s_, 17, BG, anchor='middle', weight=700) + '</g>')
     defs = (f'<radialGradient id="spot1" cx=".5" cy="0" r="1"><stop offset="0" stop-color="{CYAN}" stop-opacity=".30"/><stop offset="1" stop-color="{CYAN}" stop-opacity="0"/></radialGradient>'
@@ -678,22 +665,22 @@ def cast_scene():
             f'<pattern id="scan2" width="3" height="3" patternUnits="userSpaceOnUse"><rect width="3" height="1" fill="#000" opacity=".35"/></pattern>'
             f'<clipPath id="stage"><rect width="{W}" height="{H}" rx="22"/></clipPath>')
     refl = (f'<g mask="url(#refl)" opacity=".4"><g transform="translate(0 {2 * floor}) scale(1 -1)">'
-            f'<use href="#{rook_id}"/><use href="#{wolf_id}"/></g></g>')
+            f'<use href="#{robot_id}"/><use href="#{wolf_id}"/></g></g>')
     beam = lambda c, top, base, grad: f'<polygon points="{c - top},0 {c + top},0 {c + base},{floor} {c - base},{floor}" fill="url(#{grad})"/>'
     body = (f'<g clip-path="url(#stage)"><rect width="{W}" height="{H}" fill="{BG}"/>{stars(W, H, 60, rng)}' + beam(rcx, 60, 230, 'spot1') + beam(wcx, 50, 190, 'spot2')
             + f'<rect x="0" y="{floor}" width="{W}" height="{H - floor}" fill="#0a0812"/><line x1="0" y1="{floor}" x2="{W}" y2="{floor}" stroke="#fff" stroke-opacity=".12"/>'
             f'{refl}{rg}{screen}{wg}{bub}' + text(150, 60, 'THE CAST', 13, op=.5, ls=6)
-            + text(rcx, floor + 40, 'ROOK · lives in Clockford', 13, CYAN, .85, anchor='middle', ls=2)
+            + text(rcx, floor + 40, 'THE ROBOT · lives in Clockford', 13, CYAN, .85, anchor='middle', ls=2)
             + text(wcx, floor + 40, 'THE WOLF · head of security (self-appointed)', 13, YELLOW, .85, anchor='middle', ls=2)
             + rail(H, CYAN, YELLOW) + '</g>' + f'<rect x="1" y="1" width="{W - 2}" height="{H - 2}" rx="22" fill="none" stroke="#fff" stroke-opacity=".1"/>')
-    return svg(W, H, body, 'Rook, the robot rabbit who lives in Clockford, counting down to the beta on his chest screen, and the wolf, head of security (self-appointed).', defs)
+    return svg(W, H, body, 'The cast: a small robot with long ears who lives in Clockford, keeping watch with a screen on his chest, and the wolf, head of security (self-appointed).', defs)
 
 
 # ================================================================ S9 THE ROAD SO FAR (the line turns and becomes the timeline)
 def timeline():
     H = 270
-    pts = [('2022', 'CO-PRODUCER', 'Gaming Wall St · HBO Max', '#fff'), ('2026', 'OPENSSF SILVER × 2', 'Ratchet + Crimp', GREEN),
-           ('2026', 'PATENTS PENDING', 'Clockford + Crimp', GOLD), ('10 NOV 2026', 'PRIVATE BETA', 'Clockford opens its doors', PINK)]
+    pts = [('2022', 'CO-PRODUCER', 'Gaming Wall St · HBO Max', '#fff'), ('2026', 'WARDLATCH', 'free and open source', GREEN),
+           ('2026', 'OPENSSF SILVER × 3', 'Ratchet · Crimp · Wardlatch', GOLD), ('NEXT', 'PRIVATE BETA', 'Clockford opens its doors', PINK)]
     x0, x1, y = 220, 1110, 140
     body = card_bg(H)
     body += f'<path d="M{RAIL_X},0 L{RAIL_X},{y - 24} Q{RAIL_X},{y} {RAIL_X + 24},{y} L{x1},{y} L{W - 76},{y} Q{W - 52},{y} {W - 52},{y + 24} L{W - 52},{H}" fill="none" stroke="#fff" stroke-width="6" opacity=".8"/>'
@@ -707,7 +694,7 @@ def timeline():
                  + (f'<circle cx="{x:.0f}" cy="{y}" r="12" fill="none" stroke="{col}" stroke-width="2"><animate attributeName="r" values="12;34" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="2s" repeatCount="indefinite"/></circle>' if last else '')
                  + text(x, y - 30, when, 13, col, .9, anchor='middle', ls=3) + text(x, y + 48, what, 16, col, anchor='middle', font=SANS, weight=900, ls=1.5) + text(x, y + 70, sub, 13, op=.6, anchor='middle'))
     body += mini('timeline', x0 + 60, y - 4, '#ffffff')
-    return svg(W, H, body, 'The road so far: 2022 co-producer (HBO Max); 2026 OpenSSF Silver for Ratchet and Crimp; patents pending; 10 November 2026 Clockford private beta.')
+    return svg(W, H, body, 'The road so far: 2022 co-producer (HBO Max); 2026 Wardlatch, free and open source; 2026 OpenSSF Silver for Ratchet, Crimp and Wardlatch; next, the Clockford private beta.')
 
 
 # ================================================================ S10 THE WALL
@@ -751,8 +738,8 @@ def footer(light=False):
     tx, ty = W - 110, floor
     body += (f'<circle cx="{tx}" cy="{ty}" r="46" fill="{"#fff" if light else BG}" stroke="{PINK}" stroke-width="6"/>'
              f'<circle cx="{tx}" cy="{ty}" r="46" fill="none" stroke="{PINK}" stroke-width="2"><animate attributeName="r" values="46;72" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values=".8;0" dur="2.4s" repeatCount="indefinite"/></circle>'
-             + text(tx, ty - 4, '10', 26, PINK, font=SANS, weight=900, anchor='middle') + text(tx, ty + 18, 'NOV', 13, PINK, weight=700, anchor='middle', ls=3))
-    rg, _ = ground('rook', 250, floor, 214, '#ffffff' if light else CYAN, 1, night=not light)
+             + text(tx, ty - 4, 'LAST', 26, PINK, font=SANS, weight=900, anchor='middle') + text(tx, ty + 18, 'STOP', 13, PINK, weight=700, anchor='middle', ls=3))
+    rg, _ = ground('robot', 250, floor, 214, '#ffffff' if light else CYAN, 1, night=not light)
     desk = (f'<rect x="300" y="{floor - 72}" width="170" height="10" rx="3" fill="#6d5233"/><rect x="310" y="{floor - 62}" width="10" height="62" fill="#4e3a23"/><rect x="450" y="{floor - 62}" width="10" height="62" fill="#4e3a23"/>'
             f'<rect x="330" y="{floor - 90}" width="110" height="18" rx="2" fill="#efeadd" transform="rotate(-4 385 {floor - 81})"/>'
             + text(385, floor - 77, 'FINDERS', 8, '#7a6a4a', weight=700, anchor='middle', ls=2, extra=f'transform="rotate(-4 385 {floor - 81})"'))
@@ -761,13 +748,14 @@ def footer(light=False):
     led = text(520, 60, 'FINDERS LEDGER', 13, fg, .55, ls=6) + text(520, 92, 'FOUND HIM YESTERDAY', 12, acc, .9, ls=3, weight=700)
     led += (''.join(text(520 + (i // 4) * 210, 120 + (i % 4) * 22, '@' + h, 14, fg, .9) for i, h in enumerate(yest)) if yest
             else text(520, 122, 'nobody yesterday. he’s good.', 14, fg, .7, extra='font-style="italic"'))
-    led += text(520, 222, f'ALL-TIME FINDERS: {len(L.get("all", []))}', 12, fg, .6, ls=3) + text(520, 244, 'found him? click here and tell Rook the word.', 12, acc, .8)
+    led += text(520, 222, f'ALL-TIME FINDERS: {len(L.get("all", []))}', 12, fg, .6, ls=3) + text(520, 244, 'found him? click here and tell the robot the word.', 12, acc, .8)
     wg, (wx, wy, ww, wh) = ground('wolf-lookback', 985, floor, 152, '#ffe9c2' if light else PINK, -1, night=not light)
     lip = f'<rect x="{RAIL_X + 20}" y="{floor + 2}" width="{W - 240}" height="5" fill="{"#dfe6ff" if light else "#16121f"}"/>'
     copy = text(150, H - 26, 'daylight edition. the night shift left you a note: come back tomorrow.' if light else 'built at 3 a.m., on purpose. the agents never sleep. neither do i.', 14, fg, .72)
-    body += rg + desk + wg + lip + pill(wx + ww * .5, wy - 12, 'same time tomorrow?', INK if light else PINK, '#fff', 14, 'middle') + led + copy + mini('footer', 760, floor, PINK, not light)
+    # the footer's hunt slot: under the finders desk, between its legs (x 320 to 450), clear of every line of text
+    body += rg + desk + wg + lip + pill(wx + ww * .5, wy - 12, 'same time tomorrow?', INK if light else PINK, '#fff', 14, 'middle') + led + copy + mini('footer', 372, floor, PINK, not light)
     body += f'<rect x="1" y="1" width="{W - 2}" height="{H - 2}" rx="22" fill="none" stroke="{fg}" stroke-opacity=".12"/>'
-    return svg(W, H, body, 'Last stop: 10 November. The finders ledger for today’s wolf hunt.', defs)
+    return svg(W, H, body, 'Last stop: the finders ledger for today’s wolf hunt.', defs)
 
 
 # ================================================================ dividers: the line keeps going (a hunt slot each)
@@ -835,7 +823,7 @@ def update_ledger():
         said = re.sub(r'[^A-Z]', '', (issue.get('body') or '').upper().replace('È', 'E').replace('É', 'E'))
         right = any(w in said for w in ok)
         try:
-            call('POST', f'{api}/issues/{issue["number"]}/comments', {'body': '**Rook:** ' + ('Logged. He says hi.' if right else 'Wrong word. He’s still out there.')})
+            call('POST', f'{api}/issues/{issue["number"]}/comments', {'body': '**The finders desk:** ' + ('Logged. He says hi.' if right else 'Wrong word. He’s still out there.')})
             call('PATCH', f'{api}/issues/{issue["number"]}', {'state': 'closed', 'state_reason': 'completed' if right else 'not_planned'})
         except Exception as e:
             print('ledger:', e)
@@ -850,7 +838,7 @@ def update_ledger():
 def main():
     if '--daily' in sys.argv: update_ledger()
     out = {'hero-dark.svg': hero(False), 'hero-light.svg': hero(True), 'board.svg': board(),
-           'st-clockford.svg': st_clockford(), 'st-ratchet.svg': st_ratchet(), 'st-crimp.svg': st_crimp(), 'st-marklode.svg': st_marklode(), 'st-max.svg': st_max(),
+           'st-clockford.svg': st_clockford(), 'st-ratchet.svg': st_ratchet(), 'st-crimp.svg': st_crimp(), 'st-marklode.svg': st_marklode(),
            'rules.svg': rules(), 'how.svg': how(), 'terminal.svg': terminal(), 'cast.svg': cast_scene(), 'timeline.svg': timeline(), 'wall.svg': wall(),
            'footer-dark.svg': footer(False), 'footer-light.svg': footer(True), 'stack.svg': stack()}
     for k in (1, 2, 3):
